@@ -1,57 +1,88 @@
-# Thingpark CLI
+# Thingpark Enterprise CLI
 
-TPE-CLI is a Command Line Interface tool for managing Thingpark Enterprise devices. It provides a set of commands to interact with devices, gateways, routes, and connections in Thingpark Enterprise. With TPE-CLI, you can easily list devices, gateways, routes, and connections, and update devices with a CSV file.
+A CLI tool for managing ThingPark Enterprise devices.
 
 ## Installation
 
-To install TPE-CLI, run the following command:
+1. Clone the repository from GitHub: `git clone https://github.com/pmatsa/thingpark-cli.git`
+2. Navigate to the project directory: `cd thingpark-cli`
+3. Install dependencies: `npm install`
+4. Create a `.env` file and add your ThingPark Enterprise API credentials:
 
 ```
-npm install -g tpe-cli
+ENCRYPTION_KEY=your-32-characters-long-key
 ```
 
-## Usage
+## Commands
 
 ### Login
 
-To log in to Thingpark Enterprise, run the following command:
+The login command allows you to authenticate your credentials with ThingPark Enterprise API.
 
 ```
-tpe-cli login
+tpx login
 ```
-
-This will prompt you to enter your Thingpark Enterprise credentials.
 
 ### Device
 
+The device command allows you to manage devices in ThingPark Enterprise.
+
 #### List Devices
 
-To list all devices in Thingpark Enterprise, run the following command:
+The list command allows you to display a list of all devices in ThingPark Enterprise.
 
 ```
-tpe-cli device list
+tpx device list
 ```
 
 #### Update Devices
 
-To update devices with a CSV file, run the following command:
+The update command allows you to update device information using a CSV file. The CSV file should contain the device EUIs and the fields to update.
 
 ```
-tpe-cli device update --csv <csvPath>
+tpx device update --csv <csvPath>
 ```
-
-Where `<csvPath>` is the path to your CSV file.
 
 ### Gateway
 
+The gateway command allows you to manage gateways in ThingPark Enterprise.
+
 #### List Gateways
 
-To list all gateways in Thingpark Enterprise, run the following command:
+The list command allows you to display a list of all gateways in ThingPark Enterprise.
 
 ```
-tpe-cli gateway list
+tpx gateway list
 ```
 
 ### Route
 
-#### List
+The route command allows you to manage routes in ThingPark Enterprise.
+
+#### List Routes
+
+The list command allows you to display a list of all routes in ThingPark Enterprise.
+
+```
+tpx route list
+```
+
+### Connection
+
+The connection command allows you to manage connections in ThingPark Enterprise.
+
+#### List Connections
+
+The list command allows you to display a list of all connections in ThingPark Enterprise.
+
+```
+tpx connection list
+```
+
+## Contributing
+
+Contributions are welcome! Please submit a pull request or open an issue if you would like to contribute to the project.
+
+## License
+
+This project is licensed under the ISC License. See the LICENSE file for more information.
