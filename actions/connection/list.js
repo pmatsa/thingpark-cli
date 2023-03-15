@@ -58,7 +58,7 @@ const listConnections = async (pageIndex) => {
 const displayConnectionsTable = (connections, startIndex) => {
     const table = new Table({
         head: ['A/A', 'Id', 'Connector Id', 'Name', 'Startup Time', 'State'],
-        colWidths: [10, 20, 25, 30, 30, 15],
+        colWidths: [10, 20, 25, 35, 30, 15],
     });
 
     connections.forEach((connection, index) => {

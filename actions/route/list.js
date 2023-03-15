@@ -58,7 +58,7 @@ const listRoutes = async (pageIndex) => {
 const displayRoutesTable = (routes, startIndex) => {
     const table = new Table({
         head: ['A/A', 'Ref', 'Name', 'AS ID', 'Connector Class', 'Content Type', 'Strategy'],
-        colWidths: [10, 10, 25, 30, 30, 15],
+        colWidths: [10, 10, 35, 30, 30, 15],
     });
 
     routes.forEach((route, index) => {

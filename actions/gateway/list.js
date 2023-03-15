@@ -58,7 +58,7 @@ const listGateways = async (pageIndex) => {
 const displayGatewaysTable = (gateways, startIndex) => {
     const table = new Table({
         head: ['A/A', 'Name', 'Ref', 'Id', 'UUID', 'Base Station Profile Id', 'Health State'],
-        colWidths: [10, 35, 20, 20, 35, 20, 20],
+        colWidths: [10, 35, 15, 15, 30, 20, 25],
     });
 
     gateways.forEach((gateway, index) => {
