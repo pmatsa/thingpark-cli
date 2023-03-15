@@ -39,7 +39,7 @@ tpx device list
 #### Update Devices
 
 The update command allows you to update device information using a CSV file. The CSV file should contain the device EUIs and the fields to update.
-Acceptable CSV headers: *['eui', 'name', 'geoLatitude', 'geoLongitude', 'routeRefs']*
+Acceptable CSV headers: *['eui', 'name', 'geoLatitude', 'geoLongitude', 'routeRefs']*. When using *routeRefs*, the script looks for a seperator in the CSV (":" or ";") and creates routeRef array.
 
 ```
 tpx device update --csv <csvPath>
