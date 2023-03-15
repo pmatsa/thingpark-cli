@@ -11,7 +11,7 @@ const http = rateLimit(axios.create({
     }),
 }), { maxRequests: 1, perMilliseconds: 250 });
 
-const listDevices = async (pageIndex) => {
+const listRoutes = async (pageIndex) => {
 
     if (!config) {
         console.log('Please log in first using the "tpe login" command.');
@@ -20,10 +20,9 @@ const listDevices = async (pageIndex) => {
 
     // Set default pageIndex value to 1 if it's not a number
     pageIndex = typeof pageIndex === 'number' ? pageIndex : 1;
-    console.log(pageIndex)
 
     try {
-        const response = await http.get(`${config.baseUrl}/thingpark/dx/core/latest/api/devices`, {
+        const response = await http.get(`${config.baseUrl}/thingpark/dx/core/latest/api/routes`, {
             headers: {
                 accept: 'application/json',
                 Authorization: `Bearer ${config.access_token}`,
@@ -33,49 +32,48 @@ const listDevices = async (pageIndex) => {
             },
         });
 
-        const devices = response.data;
-        const startIndex = (pageIndex - 1) * devices.length + 1;
+        const routes = response.data;
+        const startIndex = (pageIndex - 1) * routes.length + 1;
 
+        displayRoutesTable(routes, startIndex);
 
-        displayDevicesTable(devices, startIndex);
-
-        // Check if there are more devices and ask the user if they want to view the next page
-        if (devices.length > 99) {
+        // Check if there are more routes and ask the user if they want to view the next page
+        if (routes.length > 99) {
             const nextPage = readline.question('Do you want to view the next page? (Y/n): ');
             if (nextPage.toLowerCase() === 'y' || nextPage === '') {
-                listDevices(pageIndex + 1);
+                listRoutes(pageIndex + 1);
             }
         } else {
-            console.log('No more devices found.');
+            console.log('No more routes found.');
         }
     } catch (error) {
         if (error.response) {
-            console.error('Error fetching devices:', error.response.data);
+            console.error('Error fetching routes:', error.response.data);
         } else {
-            console.error('Error fetching devices:', error.message);
+            console.error('Error fetching routes:', error.message);
         }
     }
 };
 
-const displayDevicesTable = (devices, startIndex) => {
+const displayRoutesTable = (routes, startIndex) => {
     const table = new Table({
-        head: ['A/A', 'Ref', 'Name', 'EUI', 'Health State', 'Latitude', 'Longitude'],
-        colWidths: [10, 20, 25, 25, 20, 20, 20],
+        head: ['A/A', 'Ref', 'Name', 'AS ID', 'Connector Class', 'Content Type', 'Strategy'],
+        colWidths: [10, 10, 25, 30, 30, 15],
     });
 
-    devices.forEach((device, index) => {
+    routes.forEach((route, index) => {
         table.push([
             startIndex + index,
-            device.ref,
-            device.name,
-            device.EUI,
-            device.statistics?.healthState,
-            device.geoLatitude,
-            device.geoLongitude,
+            route.ref,
+            route.name,
+            route.asId,
+            route.connectorClass,
+            route.contentType,
+            route.strategy,
         ]);
     });
 
     console.log(table.toString());
 };
 
-module.exports = { listDevices } 
+module.exports = { listRoutes }

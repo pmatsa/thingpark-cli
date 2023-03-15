@@ -11,7 +11,7 @@ const http = rateLimit(axios.create({
     }),
 }), { maxRequests: 1, perMilliseconds: 250 });
 
-const listDevices = async (pageIndex) => {
+const listConnections = async (pageIndex) => {
 
     if (!config) {
         console.log('Please log in first using the "tpe login" command.');
@@ -20,10 +20,9 @@ const listDevices = async (pageIndex) => {
 
     // Set default pageIndex value to 1 if it's not a number
     pageIndex = typeof pageIndex === 'number' ? pageIndex : 1;
-    console.log(pageIndex)
 
     try {
-        const response = await http.get(`${config.baseUrl}/thingpark/dx/core/latest/api/devices`, {
+        const response = await http.get(`${config.baseUrl}/thingpark/dx/core/latest/api/connections`, {
             headers: {
                 accept: 'application/json',
                 Authorization: `Bearer ${config.access_token}`,
@@ -33,49 +32,47 @@ const listDevices = async (pageIndex) => {
             },
         });
 
-        const devices = response.data;
-        const startIndex = (pageIndex - 1) * devices.length + 1;
+        const connections = response.data;
+        const startIndex = (pageIndex - 1) * connections.length + 1;
 
+        displayConnectionsTable(connections, startIndex);
 
-        displayDevicesTable(devices, startIndex);
-
-        // Check if there are more devices and ask the user if they want to view the next page
-        if (devices.length > 99) {
+        // Check if there are more connections and ask the user if they want to view the next page
+        if (connections.length > 99) {
             const nextPage = readline.question('Do you want to view the next page? (Y/n): ');
             if (nextPage.toLowerCase() === 'y' || nextPage === '') {
-                listDevices(pageIndex + 1);
+                listConnections(pageIndex + 1);
             }
         } else {
-            console.log('No more devices found.');
+            console.log('No more connections found.');
         }
     } catch (error) {
         if (error.response) {
-            console.error('Error fetching devices:', error.response.data);
+            console.error('Error fetching connections:', error.response.data);
         } else {
-            console.error('Error fetching devices:', error.message);
+            console.error('Error fetching connections:', error.message);
         }
     }
 };
 
-const displayDevicesTable = (devices, startIndex) => {
+const displayConnectionsTable = (connections, startIndex) => {
     const table = new Table({
-        head: ['A/A', 'Ref', 'Name', 'EUI', 'Health State', 'Latitude', 'Longitude'],
-        colWidths: [10, 20, 25, 25, 20, 20, 20],
+        head: ['A/A', 'Id', 'Connector Id', 'Name', 'Startup Time', 'State'],
+        colWidths: [10, 20, 25, 30, 30, 15],
     });
 
-    devices.forEach((device, index) => {
+    connections.forEach((connection, index) => {
         table.push([
             startIndex + index,
-            device.ref,
-            device.name,
-            device.EUI,
-            device.statistics?.healthState,
-            device.geoLatitude,
-            device.geoLongitude,
+            connection.id,
+            connection.connectorId,
+            connection.name,
+            connection.startupTime,
+            connection.state,
         ]);
     });
 
     console.log(table.toString());
 };
 
-module.exports = { listDevices } 
+module.exports = { listConnections }

@@ -38,7 +38,7 @@ const listGateways = async (pageIndex) => {
         displayGatewaysTable(gateways, startIndex);
 
         // Check if there are more gateways and ask the user if they want to view the next page
-        if (gateways.length > 0) {
+        if (gateways.length > 99) {
             const nextPage = readline.question('Do you want to view the next page? (Y/n): ');
             if (nextPage.toLowerCase() === 'y' || nextPage === '') {
                 listGateways(pageIndex + 1);
