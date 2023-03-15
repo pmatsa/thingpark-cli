@@ -1,4 +1,4 @@
-# TPE-CLI
+# Thingpark CLI
 
 TPE-CLI is a Command Line Interface tool for managing Thingpark Enterprise devices. It provides a set of commands to interact with devices, gateways, routes, and connections in Thingpark Enterprise. With TPE-CLI, you can easily list devices, gateways, routes, and connections, and update devices with a CSV file.
 

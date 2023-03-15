@@ -6,7 +6,7 @@ const loginAction = require('./actions/login');
 const { listDevices } = require('./actions/device/list');
 const { updateDevices } = require('./actions/device/update');
 //Gateway
-const { listGateways } = require('./actions/gateway');
+const { listGateways } = require('./actions/gateway/list');
 //Route
 const { listRoutes } = require('./actions/route');
 //Connection
@@ -55,10 +55,20 @@ deviceCommand.on('command:*', function (operands) {
 
 program.addCommand(deviceCommand);
 
-program
-  .command('gateway list')
+const gatewayCommand = new Command('gateway');
+gatewayCommand
+  .command('list')
   .description('List gateways')
   .action(listGateways);
+
+  gatewayCommand.on('command:*', function (operands) {
+    console.error(`error: unknown command '${operands[0]}'`);
+    const availableCommands = gatewayCommand.commands.map((cmd) => cmd.name());
+    console.log('Available commands: ', availableCommands.join(', '));
+    process.exitCode = 1;
+  });
+  
+  program.addCommand(gatewayCommand);
 
 program
   .command('route list')

@@ -34,6 +34,6 @@
     "readline-sync": "^1.4.10"
   },
   "bin": {
-    "tpx": "./index.js"
+    "tpe-cli": "./index.js"
   }
 }
