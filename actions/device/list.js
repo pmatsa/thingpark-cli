@@ -59,8 +59,8 @@ const listDevices = async (pageIndex) => {
 
 const displayDevicesTable = (devices, startIndex) => {
     const table = new Table({
-        head: ['A/A', 'Ref', 'Name', 'EUI', 'Health State', 'Latitude', 'Longitude'],
-        colWidths: [10, 20, 25, 25, 20, 20, 20],
+        head: ['A/A', 'Ref', 'Name', 'EUI', 'Health State', 'Device Profile ID', 'Latitude', 'Longitude'],
+        colWidths: [10, 20, 25, 25, 20, 30, 20, 20],
     });
 
     devices.forEach((device, index) => {
@@ -70,6 +70,7 @@ const displayDevicesTable = (devices, startIndex) => {
             device.name,
             device.EUI,
             device.statistics?.healthState,
+            device.deviceProfileId,
             device.geoLatitude,
             device.geoLongitude,
         ]);

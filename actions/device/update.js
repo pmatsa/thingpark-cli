@@ -7,7 +7,7 @@ const readline = require('readline-sync');
 const config = require('../../config.json');
 
 /* TODO: change those headers to exist in the cli command in the first place */
-/* tpe device update --csv */
+/* tpx device update --csv */
 const ACCEPTABLE_HEADERS = ['eui', 'name', 'geoLatitude', 'geoLongitude', 'routeRefs'];
 
 // Set up a rate-limited axios instance, with SSL ignorance
@@ -28,7 +28,7 @@ const updateDevices = async (options) => {
     const csvPath = options.csv;
 
     if (!config) {
-        console.log('Please log in first using the "tpe login" command.');
+        console.log('Please log in first using the "tpx login" command.');
         return;
     }
 

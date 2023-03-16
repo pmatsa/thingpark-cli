@@ -10,7 +10,7 @@ const Table = require('cli-table3');
 require('dotenv').config();
 
 const configPath = path.join(__dirname, '..', 'config.json');
-const encryptedConfigPath = path.join(__dirname, '..', 'config.enc');
+const configPathEnc = path.join(__dirname, '..', 'config.enc');
 
 const http = rateLimit(axios.create({
     httpsAgent: new https.Agent({
@@ -37,7 +37,7 @@ const askBaseUrl = () => {
  */
 const askClientId = () => {
     let clientId = readlineSync.question('Enter your Client ID (email): ');
-    const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
+    const emailRegex = /^[\w-]+(\.[\w-]+)*(\+[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
     while (!emailRegex.test(clientId)) {
         console.log('Invalid email format. Please try again.');
         clientId = readlineSync.question('Enter your Client ID (email): ');
@@ -89,9 +89,6 @@ const getToken = async (baseUrl, clientId, clientSecret) => {
 
         const { client_id, expires_in, access_token } = response.data;
 
-        const encryptedConfig = encrypt(JSON.stringify({ baseUrl, clientId, clientSecret }));
-        fs.writeFileSync(encryptedConfigPath, encryptedConfig);
-
         const config = { baseUrl, expires_in, client_id, access_token };
         fs.writeFileSync(configPath, JSON.stringify(config));
 
@@ -130,6 +127,12 @@ const loginAction = async () => {
         console.log('Please try logging in again.');
     } else {
         printTokenData(tokenData);
+
+        const clientIdEnc = encrypt(clientId);
+        const clientSecretEnc = encrypt(clientSecret);
+
+        const configEnc = { clientIdEnc, clientSecretEnc };
+        fs.writeFileSync(configPathEnc, JSON.stringify(configEnc));
     }
 };
 

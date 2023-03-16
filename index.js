@@ -2,13 +2,19 @@
 
 const { Command } = require('commander');
 const loginAction = require('./actions/login');
+const statusAction = require('./actions/status');
+
 //Device
 const { listDevices } = require('./actions/device/list');
 const { updateDevices } = require('./actions/device/update');
+const { deleteDevices } = require('./actions/device/delete');
+
 //Gateway
 const { listGateways } = require('./actions/gateway/list');
+
 //Route
 const { listRoutes } = require('./actions/route/list');
+
 //Connection
 const { listConnections } = require('./actions/connection/list');
 
@@ -19,6 +25,11 @@ program
   .command('login')
   .description('Log in to Thingpark Enterprise')
   .action(loginAction);
+
+program
+  .command('status')
+  .description('Check the status of your credentials')
+  .action(statusAction);
 
 const deviceCommand = new Command('device').description('Device commands');
 deviceCommand
@@ -31,20 +42,12 @@ deviceCommand
   .requiredOption('-c, --csv <csvPath>', 'Update must have a CSV file path')
   .description('Update devices with a CSV file')
   .action((options) => updateDevices(options));
-/*
-deviceCommand
-.command('add-route')
-.option('--csv=<csv>', 'Path to CSV file')
-.option('--route=<routeRef>', 'Route reference id')
-.description('Add route to devices with a CSV file')
-.action(addDeviceRoute);
 
 deviceCommand
-.command('delete')
-.option('--csv=<csv>', 'Path to CSV file')
-.description('Delete devices with a CSV file')
-.action(deleteDevices);
-*/
+  .command('delete')
+  .requiredOption('-c, --csv <csvPath>', 'Delete must have a CSV file path')
+  .description('Delete devices (EUIs) with a CSV file')
+  .action((options) => deleteDevices(options));
 
 deviceCommand.on('command:*', function (operands) {
   console.error(`error: unknown command '${operands[0]}'`);
