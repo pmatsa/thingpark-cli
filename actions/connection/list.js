@@ -1,9 +1,9 @@
-const axios = require('axios');
-const https = require('https');
-const rateLimit = require('axios-rate-limit');
-const Table = require('cli-table3');
-const readline = require('readline-sync');
-const config = require('../../config.json');
+import axios from 'axios';
+import https from 'https';
+import rateLimit from 'axios-rate-limit';
+import Table from 'cli-table3';
+import readline from 'readline-sync';
+import config from '../../config.json';
 
 const http = rateLimit(axios.create({
     httpsAgent: new https.Agent({
@@ -75,4 +75,4 @@ const displayConnectionsTable = (connections, startIndex) => {
     console.log(table.toString());
 };
 
-module.exports = { listConnections }
+export default listConnections;

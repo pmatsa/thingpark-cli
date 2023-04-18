@@ -1,79 +1,56 @@
-const axios = require('axios');
-const https = require('https');
-const rateLimit = require('axios-rate-limit');
-const readlineSync = require('readline-sync');
-const fs = require('fs');
-const qs = require('qs');
-const crypto = require('crypto');
-const path = require('path');
-const Table = require('cli-table3');
-require('dotenv').config();
 
-const configPath = path.join(__dirname, '..', 'config.json');
-const configPathEnc = path.join(__dirname, '..', 'config.enc');
+import axios from 'axios';
+import https from 'https';
+import rateLimit from 'axios-rate-limit';
+import inquirer from 'inquirer';
+import fs from 'fs';
+import path from 'path';
+import Table from 'cli-table3';
+import qs from 'qs';
+import { fileURLToPath } from 'url';
 
-const http = rateLimit(axios.create({
-    httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-    }),
-}), { maxRequests: 1, perMilliseconds: 250 });
+// Configure axios-rate-limit
+const http = rateLimit(axios.create({ httpsAgent: new https.Agent({ rejectUnauthorized: false }) }), { maxRPS: 10 });
 
-/**
- * Prompt for Thingpark Enterprise baseUrl
- * @returns Thingpark Enterprise baseUrl
- */
-const askBaseUrl = () => {
-    let baseUrl = readlineSync.question('Enter the base URL of your Thingpark Enterprise (must start with http(s):// and not end with /): ');
-    while (!baseUrl.match(/^https?:\/\/.+[^\/]$/)) {
-        console.log('Invalid base URL. Please try again.');
-        baseUrl = readlineSync.question('Enter the base URL of your Thingpark Enterprise (must start with http(s):// and not end with /): ');
-    }
-    return baseUrl;
+// Validate base URL
+const validateBaseUrl = url => {
+    return /^http(s)?:\/\/.+[^/]$/.test(url) ? true : 'Please enter a valid URL.';
 };
 
-/**
- * Prompt for Thingpark Enterprise client_id
- * @returns Thingpark Enterprise client_id
- */
-const askClientId = () => {
-    let clientId = readlineSync.question('Enter your Client ID (email): ');
-    const emailRegex = /^[\w-]+(\.[\w-]+)*(\+[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
-    while (!emailRegex.test(clientId)) {
-        console.log('Invalid email format. Please try again.');
-        clientId = readlineSync.question('Enter your Client ID (email): ');
-    }
-    return clientId;
+// Validate email address
+const validateEmail = email => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? true : 'Please enter a valid email address.';
 };
 
-/**
- * Prompt for Thingpark Enterprise client_secret
- * @returns Thingpark Enterprise client_secret
- */
-const askClientSecret = () => {
-    return readlineSync.question('Enter your Client Secret (password): ', { hideEchoBack: true });
-};
+// Prompt user for input
+async function getUserInput() {
+    const questions = [
+        {
+            type: 'input',
+            name: 'baseUrl',
+            message: 'Enter the base URL of your Thingpark Enterprise (must start with http(s):// and not end with /):',
+            validate: validateBaseUrl,
+        },
+        {
+            type: 'input',
+            name: 'clientId',
+            message: 'Enter your Client ID (email):',
+            validate: validateEmail,
+        },
+        {
+            type: 'password',
+            name: 'clientSecret',
+            message: 'Enter your Client Secret (password):',
+            mask: '*',
+        },
+    ];
 
-const encrypt = (text) => {
-    const cipher = crypto.createCipheriv('aes-256-cbc', process.env.ENCRYPTION_KEY, '0123456789abcdef');
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return encrypted;
-};
+    return await inquirer.prompt(questions);
+}
 
-const decrypt = (encrypted) => {
-    const decipher = crypto.createDecipheriv('aes-256-cbc', process.env.ENCRYPTION_KEY, '0123456789abcdef');
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-};
-
-/**
- * POST method using axios to receive access_token
- * 
- */
-const getToken = async (baseUrl, clientId, clientSecret) => {
+// Retrieve token from API
+async function retrieveToken(baseUrl, clientId, clientSecret) {
     try {
-
         const response = await http.post(`${baseUrl}/thingpark/dx/admin/latest/api/oauth/token`, qs.stringify({
             grant_type: 'client_credentials',
             client_id: clientId,
@@ -88,52 +65,54 @@ const getToken = async (baseUrl, clientId, clientSecret) => {
         });
 
         const { client_id, expires_in, access_token } = response.data;
-
-        const config = { baseUrl, expires_in, client_id, access_token };
-        fs.writeFileSync(configPath, JSON.stringify(config));
-
-        console.log('Successfully logged in!');
-
-        return config;
+        return { client_id, expires_in, access_token };
     } catch (error) {
-        console.error('Error obtaining token:', error.message);
-        return null;
+        console.error('Error retrieving token:', error.message);
+        throw error;
     }
-};
+}
 
-const printTokenData = (tokenData) => {
+// Save credentials to creds.json
+function saveCredentials(baseUrl, credentials) {
+    const dirname = path.dirname(fileURLToPath(import.meta.url));
+    const filePath = path.resolve(dirname, '../creds.json');
+    fs.writeFileSync(filePath, JSON.stringify({ ...credentials, baseUrl }, null, 2));
+    console.log('Credentials saved to', filePath);
+}
+
+// Helper function to convert seconds to human-readable format
+function secondsToHumanReadable(seconds) {
+    const days = Math.floor(seconds / 86400);
+    seconds %= 86400;
+    const hours = Math.floor(seconds / 3600);
+    seconds %= 3600;
+    const minutes = Math.floor(seconds / 60);
+    seconds %= 60;
+
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+}
+
+// Display token data in a CLI table
+function displayTokenData(tokenData) {
     const table = new Table({
-        head: ['Client ID', 'Expires In', 'Access Token'],
+        head: ['ClientID', 'Expires In', 'Access Token'],
         colWidths: [45, 20, 45],
     });
 
-    const clientId = tokenData.client_id;
-    const expiresInDate = new Date(Date.now() + tokenData.expires_in * 1000);
-    const formattedExpiresIn = expiresInDate.toISOString().slice(0, 10);
-    const truncatedAccessToken = tokenData.access_token.slice(0, 40) + '...';
-
-    table.push([clientId, formattedExpiresIn, truncatedAccessToken]);
+    table.push([tokenData.client_id, secondsToHumanReadable(tokenData.expires_in) , tokenData.access_token]);
     console.log(table.toString());
-};
+}
 
-
-const loginAction = async () => {
-    const baseUrl = await askBaseUrl();
-    const clientId = await askClientId();
-    const clientSecret = await askClientSecret();
-
-    const tokenData = await getToken(baseUrl, clientId, clientSecret);
-    if (!tokenData) {
-        console.log('Please try logging in again.');
-    } else {
-        printTokenData(tokenData);
-
-        const clientIdEnc = encrypt(clientId);
-        const clientSecretEnc = encrypt(clientSecret);
-
-        const configEnc = { clientIdEnc, clientSecretEnc };
-        fs.writeFileSync(configPathEnc, JSON.stringify(configEnc));
+// Main function to execute the login process
+async function loginAction() {
+    try {
+        const userInput = await getUserInput();
+        const tokenData = await retrieveToken(userInput.baseUrl, userInput.clientId, userInput.clientSecret);
+        saveCredentials(userInput.baseUrl, tokenData);
+        displayTokenData(tokenData);
+    } catch (error) {
+        console.error('Error during login process:', error.message);
     }
-};
+}
 
-module.exports = loginAction;
+export default loginAction;

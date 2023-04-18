@@ -1,82 +1,93 @@
-const axios = require('axios');
-const https = require('https');
-const rateLimit = require('axios-rate-limit');
-const Table = require('cli-table3');
-const readline = require('readline-sync');
-const config = require('../../config.json');
+import axios from 'axios';
+import https from 'https';
+import rateLimit from 'axios-rate-limit';
+import Table from 'cli-table3';
+import inquirer from 'inquirer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import loginAction from '../login.js';
 
-const http = rateLimit(axios.create({
-    httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-    }),
-}), { maxRequests: 1, perMilliseconds: 250 });
+const http = rateLimit(axios.create({ httpsAgent: new https.Agent({ rejectUnauthorized: false }) }), { maxRPS: 10 });
 
-const listDevices = async (pageIndex) => {
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+const credsPath = path.resolve(dirname, '../../creds.json');
 
-    if (!config) {
-        console.log('Please log in first using the "tpe login" command.');
-        return;
+async function getConfig() {
+    if (!fs.existsSync(credsPath)) {
+        console.log('Please log in with "tpx login".');
+        await loginAction();
     }
 
-    // Set default pageIndex value to 1 if it's not a number
-    pageIndex = typeof pageIndex === 'number' ? pageIndex : 1;
-    console.log(pageIndex)
+    const config = JSON.parse(fs.readFileSync(credsPath, 'utf-8'));
 
+    if (!config.access_token) {
+        console.log('Please log in with "tpx login".');
+        await loginAction();
+    }
+
+    return config;
+}
+
+async function listDevices() {
     try {
-        const response = await http.get(`${config.baseUrl}/thingpark/dx/core/latest/api/devices`, {
-            headers: {
-                accept: 'application/json',
-                Authorization: `Bearer ${config.access_token}`,
-            },
-            params: {
-                pageIndex: parseInt(pageIndex, 10),
-            },
-        });
+        const config = await getConfig();
+        let pageIndex = 1;
+        let deviceCount = 0;
+        let hasMorePages = true;
 
-        const devices = response.data;
-        const startIndex = (pageIndex - 1) * devices.length + 1;
+        while (hasMorePages) {
+            const response = await http.get(`${config.baseUrl}/thingpark/dx/core/latest/api/devices`, {
+                headers: {
+                    accept: 'application/json',
+                    Authorization: `Bearer ${config.access_token}`,
+                },
+                params: {
+                    pageIndex: parseInt(pageIndex, 10),
+                },
+            });
 
+            const devices = response.data;
+            const table = new Table({
+                head: ['A/A', 'Ref', 'Name', 'EUI', 'Health State', 'Device Profile ID', 'Latitude', 'Longitude'],
+                colWidths: [10, 20, 25, 25, 20, 30, 20, 20],
+            });
 
-        displayDevicesTable(devices, startIndex);
+            devices.forEach(device => {
+                deviceCount++;
+                table.push([
+                    deviceCount,
+                    device.ref,
+                    device.name,
+                    device.EUI,
+                    device.statistics?.healthState,
+                    device.deviceProfileId,
+                    device.geoLatitude,
+                    device.geoLongitude,
+                ]);
+            });
 
-        // Check if there are more devices and ask the user if they want to view the next page
-        if (devices.length > 99) {
-            const nextPage = readline.question('Do you want to view the next page? (Y/n): ');
-            if (nextPage.toLowerCase() === 'y' || nextPage === '') {
-                listDevices(pageIndex + 1);
+            console.log(table.toString());
+
+            if (devices.length < 100) {
+                hasMorePages = false;
+            } else {
+                const { nextPage } = await inquirer.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'nextPage',
+                        message: 'Do you want to view the next page? (Y/n):',
+                        default: false,
+                    },
+                ]);
+                hasMorePages = nextPage;
             }
-        } else {
-            console.log('No more devices found.');
+
+            pageIndex++;
         }
     } catch (error) {
-        if (error.response) {
-            console.error('Error fetching devices:', error.response.data);
-        } else {
-            console.error('Error fetching devices:', error.message);
-        }
+        console.error('Error fetching device list:', error.message);
     }
-};
+}
 
-const displayDevicesTable = (devices, startIndex) => {
-    const table = new Table({
-        head: ['A/A', 'Ref', 'Name', 'EUI', 'Health State', 'Device Profile ID', 'Latitude', 'Longitude'],
-        colWidths: [10, 20, 25, 25, 20, 30, 20, 20],
-    });
-
-    devices.forEach((device, index) => {
-        table.push([
-            startIndex + index,
-            device.ref,
-            device.name,
-            device.EUI,
-            device.statistics?.healthState,
-            device.deviceProfileId,
-            device.geoLatitude,
-            device.geoLongitude,
-        ]);
-    });
-
-    console.log(table.toString());
-};
-
-module.exports = { listDevices } 
+export default listDevices;

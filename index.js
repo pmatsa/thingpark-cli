@@ -1,22 +1,15 @@
 #!/usr/bin/env node
 
-const { Command } = require('commander');
-const loginAction = require('./actions/login');
-const statusAction = require('./actions/status');
-
-//Device
-const { listDevices } = require('./actions/device/list');
-const { updateDevices } = require('./actions/device/update');
-const { deleteDevices } = require('./actions/device/delete');
-
-//Gateway
-const { listGateways } = require('./actions/gateway/list');
-
-//Route
-const { listRoutes } = require('./actions/route/list');
-
-//Connection
-const { listConnections } = require('./actions/connection/list');
+import { Command } from 'commander';
+import loginAction from './actions/login.js';
+import statusAction from './actions/status.js';
+import listDevices from './actions/device/list.js';
+import updateDevices from './actions/device/update.js';
+/*
+import { listGateways } from './actions/gateway/list.js';
+import { listRoutes } from './actions/route/list.js';
+import { listConnections } from './actions/connection/list.js';
+*/
 
 const program = new Command();
 program.version('1.0.0');
@@ -31,6 +24,8 @@ program
   .description('Check the status of your credentials')
   .action(statusAction);
 
+
+
 const deviceCommand = new Command('device').description('Device commands');
 deviceCommand
   .command('list')
@@ -43,11 +38,20 @@ deviceCommand
   .description('Update devices with a CSV file')
   .action((options) => updateDevices(options));
 
+program.addCommand(deviceCommand);
+/*
+deviceCommand
+  .command('update')
+  .requiredOption('-c, --csv <csvPath>', 'Update must have a CSV file path')
+  .description('Update devices with a CSV file')
+  .action((options) => updateDevices(options));
+
 deviceCommand
   .command('delete')
   .requiredOption('-c, --csv <csvPath>', 'Delete must have a CSV file path')
   .description('Delete devices (EUIs) with a CSV file')
   .action((options) => deleteDevices(options));
+
 
 deviceCommand.on('command:*', function (operands) {
   console.error(`error: unknown command '${operands[0]}'`);
@@ -56,7 +60,7 @@ deviceCommand.on('command:*', function (operands) {
   process.exitCode = 1;
 });
 
-program.addCommand(deviceCommand);
+
 
 const gatewayCommand = new Command('gateway').description('Gateway commands');
 gatewayCommand
@@ -102,5 +106,11 @@ connectionCommand.on('command:*', function (operands) {
 });
 
 program.addCommand(connectionCommand);
+  */
 
 program.parse(process.argv);
+
+// Show help if no arguments were provided
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+}

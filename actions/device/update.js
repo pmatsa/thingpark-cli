@@ -1,36 +1,43 @@
-const axios = require('axios');
-const https = require('https');
-const rateLimit = require('axios-rate-limit');
-const fs = require('fs');
-const { parse } = require('csv-parse');
-const readline = require('readline-sync');
-const config = require('../../config.json');
+import axios from 'axios';
+import https from 'https';
+import rateLimit from 'axios-rate-limit';
+import fs from 'fs';
+import { parse } from 'csv-parse';
+import inquirer from 'inquirer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import loginAction from '../login.js';
 
-/* TODO: change those headers to exist in the cli command in the first place */
-/* tpx device update --csv */
-const ACCEPTABLE_HEADERS = ['eui', 'name', 'geoLatitude', 'geoLongitude', 'routeRefs'];
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+const credsPath = path.resolve(dirname, '../../creds.json');
 
-// Set up a rate-limited axios instance, with SSL ignorance
+const getConfig = async () => {
+    if (!fs.existsSync(credsPath)) {
+        console.log('Please log in with "tpx login".');
+        await loginAction();
+    }
+
+    const config = JSON.parse(fs.readFileSync(credsPath, 'utf-8'));
+
+    if (!config.access_token) {
+        console.log('Please log in with "tpx login".');
+        await loginAction();
+    }
+
+    return config;
+};
+
 const http = rateLimit(axios.create({
     httpsAgent: new https.Agent({
         rejectUnauthorized: false,
     }),
 }), { maxRequests: 1, perMilliseconds: 10 });
 
-/**
- * Finds ACCEPTABLE_HEADERS in the csv, and iterates to update devices
- * Use delimiters ";" or ":" for routeRefs to create an array of routeRefs for device.
- * @param {*} options csvFile path
- * @returns 
- */
+const ACCEPTABLE_HEADERS = ['eui', 'name', 'geoLatitude', 'geoLongitude', 'routeRefs'];
+
 const updateDevices = async (options) => {
-
+    
     const csvPath = options.csv;
-
-    if (!config) {
-        console.log('Please log in first using the "tpx login" command.');
-        return;
-    }
 
     try {
         const records = await readCSV(csvPath);
@@ -64,8 +71,14 @@ const updateDevices = async (options) => {
             }
         }
 
-        const answer = readline.question('Proceed with the update? (Y/n): ');
-        const shouldUpdate = answer.toLowerCase() === 'y' || answer === '';
+        const { shouldUpdate } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'shouldUpdate',
+                message: 'Proceed with the update?',
+                default: true,
+            },
+        ]);
 
         if (!shouldUpdate) {
             console.log('Update aborted.');
@@ -96,7 +109,6 @@ const updateDevices = async (options) => {
                             const delimiter = value.includes(';') ? ';' : ':';
                             value = value.split(delimiter).map(item => item.trim());
                         }
-
                         updateData[header] = value;
                     }
                 }
@@ -137,6 +149,7 @@ const readCSV = (csvPath) => {
 };
 
 const getDeviceRef = async (eui) => {
+    const config = await getConfig();
     const response = await http.get(`${config.baseUrl}/thingpark/dx/core/latest/api/devices`, {
         headers: {
             accept: 'application/json',
@@ -151,6 +164,7 @@ const getDeviceRef = async (eui) => {
 };
 
 const updateDevice = async (ref, updateData) => {
+    const config = await getConfig();
     try {
         await http.put(`${config.baseUrl}/thingpark/dx/core/latest/api/devices/${ref}`, updateData, {
             headers: {
@@ -164,6 +178,4 @@ const updateDevice = async (ref, updateData) => {
     }
 };
 
-module.exports = {
-    updateDevices,
-};
+export default updateDevices;
