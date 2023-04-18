@@ -8,11 +8,6 @@ A CLI tool for managing ThingPark Enterprise devices.
 2. Navigate to the project directory: `cd thingpark-cli`
 3. Install dependencies: `npm install`
 4. Link npm package: `npm link` (might need sudo)
-5. Create a `.env` file and add your ThingPark Enterprise API credentials:
-
-```
-ENCRYPTION_KEY=your-32-characters-long-key
-```
 
 ## Commands
 
